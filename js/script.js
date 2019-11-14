@@ -1,48 +1,83 @@
 let video;
-let poseNet;
-let nose = [];
-let img;
 
-function preload() {
-  img = loadImage('assets/happypotato.png');
+let poseNet;
+let nose;
+
+let featureExtractor;
+let potato;
+
+let happy;
+let meh;
+let sad;
+let train;
+let trained = false;
+let save;
+
+function poseNetLoaded() {
+  console.log("pose net loaded");
+  poseNet.singlePose();
+}
+
+function featureExtractorLoaded() {
+  console.log("feature extractor loaded");
 }
 
 function setup() {
-  createCanvas(640, 480);
-  preload();
-  //turns on webcam
+  createCanvas(400, 400);
+
   video = createCapture(VIDEO);
   video.hide();
 
-  //initialize poseNet
-  poseNet = ml5.poseNet(video, modelLoaded);
+  featureExtractor = ml5.featureExtractor('MobileNet', featureExtractorLoaded);
 
-  //look for new poses
-  poseNet.on("pose", function(results) {
-    if(results){
-      for(var i = 0; i < results.length; i++){
-        nose[i] = results[0].pose.nose;
-      };
-    };
-  });
+  poseNet = ml5.poseNet(video, poseNetLoaded);
+  poseNet.on('pose', function(results){
+    console.log(results);
+    if(results) {
+      nose = results[0].pose.nose;
+    }
+  })
+  modelTraining();
 }
 
 function draw() {
-  //draws the video input onto the canvas
   image(video, 0, 0);
-  
-  //draws circles on everyones nose
-  if(nose){
-    // console.log(nose.length);
-    for(var i = 0; i < nose.length; i++){
-      // ellipse(nose[i].x, nose[i].y, 50);
-      image(img, nose[i].x-150, nose[i].y-190, 370, 350);
-    };
-  };
+
+  if(trained) {
+    classifier.classify(video, function(error, data){
+      console.log(data[0].label);
+      potato = data[0].label;
+    })
+  }
 }
 
-function modelLoaded() {
-  console.log("poseNet has loaded");
+function modelTraining() {
+  happy = createButton('happy');
+  meh = createButton('meh');
+  sad = createButton('sad');
+  train = createButton('train');
+  save = createButton('save');
 
-  poseNet.multiPose(video);
+  happy.mousePressed(function(){
+    classifier.addImage(video, 'happy')
+  });
+  meh.mousePressed(function(){
+    classifier.addImage(video, 'meh')
+  });
+  sad.mousePressed(function(){
+    classifier.addImage(video, 'sad')
+  });
+  train.mousePressed(function(){
+    classifier.train(function(loss){
+      if(!loss){
+        console.log('model is trained');
+        trained = true;
+      } else {
+        console.log(loss);
+      }
+    })
+  });
+  save.mousePressed(function(){
+    classifier.save();
+  });
 }
