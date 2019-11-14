@@ -4,7 +4,11 @@ let poseNet;
 let nose;
 
 let featureExtractor;
+let classifier;
 let potato;
+let happyImg;
+let mehImg;
+let sadImg;
 
 let happy;
 let meh;
@@ -22,17 +26,25 @@ function featureExtractorLoaded() {
   console.log("feature extractor loaded");
 }
 
+function preload() {
+  happyImg = loadImage('assets/happypotato.png');
+  mehImg = loadImage('assets/mehpotato.png');
+  sadImg = loadImage('assets/sadpotato.png');
+}
+
 function setup() {
   createCanvas(400, 400);
+  preload();
 
   video = createCapture(VIDEO);
   video.hide();
 
   featureExtractor = ml5.featureExtractor('MobileNet', featureExtractorLoaded);
+  classifier = featureExtractor.classification();
 
   poseNet = ml5.poseNet(video, poseNetLoaded);
   poseNet.on('pose', function(results){
-    console.log(results);
+    // console.log(results);
     if(results) {
       nose = results[0].pose.nose;
     }
@@ -40,7 +52,7 @@ function setup() {
   modelTraining();
 }
 
-function draw() {
+function draw() {50
   image(video, 0, 0);
 
   if(trained) {
@@ -48,6 +60,15 @@ function draw() {
       console.log(data[0].label);
       potato = data[0].label;
     })
+  }
+  if(nose){
+    if(potato == "happy"){
+      image(happyImg, nose.x - 200, nose.y - 200, 400, 400);
+    } else if (potato == "meh") {
+      image(mehImg, nose.x - 200, nose.y - 200, 400, 400);
+    } else if (potato == "sad") {
+      image(sadImg, nose.x - 200, nose.y - 200, 400, 400);
+    }
   }
 }
 
